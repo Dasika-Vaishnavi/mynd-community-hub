@@ -172,41 +172,70 @@ export const MyndPetSidebarWidget = ({
   const greetingPlayedRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
+  // ── Helper for raw DB calls (mynd_pets not in generated types) ──
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+
+  const getAuthHeaders = useCallback(async () => {
+    if (!supabase) return null;
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return null;
+    return {
+      "Content-Type": "application/json",
+      apikey: supabaseKey,
+      Authorization: `Bearer ${session.access_token}`,
+    };
+  }, [supabaseKey]);
+
   // ── Load pet from DB ────────────────────────────────────────
   useEffect(() => {
     if (!user || !supabase) return;
     const load = async () => {
-      const { data } = await supabase
-        .from("mynd_pets")
-        .select("*")
-        .eq("user_id", user.id)
-        .single();
-      if (data) {
-        if (data.base_color) setPetColor(data.base_color);
-        if (data.accessory) setAccessory(data.accessory as any);
-        if (data.expression) setExpression(data.expression as ExpressionState);
-      }
+      const headers = await getAuthHeaders();
+      if (!headers) return;
+      try {
+        const res = await fetch(
+          `${supabaseUrl}/rest/v1/mynd_pets?user_id=eq.${user.id}&select=*`,
+          { headers }
+        );
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (rows.length > 0) {
+          const data = rows[0];
+          if (data.base_color) setPetColor(data.base_color);
+          if (data.accessory) setAccessory(data.accessory as any);
+          if (data.expression) setExpression(data.expression as ExpressionState);
+        }
+      } catch { /* no saved pet yet */ }
     };
     load();
-  }, [user]);
+  }, [user, getAuthHeaders, supabaseUrl]);
 
   // ── Auto-save with debounce ─────────────────────────────────
   const savePetConfig = useCallback(() => {
     if (!user || !supabase) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
-      await supabase
-        .from("mynd_pets")
-        .upsert({
-          user_id: user.id,
-          base_color: petColor,
-          accessory,
-          expression,
-          updated_at: new Date().toISOString(),
-        } as any);
-      toast({ title: "✓ Mynd saved!", duration: 2000 });
+      const headers = await getAuthHeaders();
+      if (!headers) return;
+      try {
+        await fetch(`${supabaseUrl}/rest/v1/mynd_pets`, {
+          method: "POST",
+          headers: {
+            ...headers,
+            Prefer: "resolution=merge-duplicates",
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            base_color: petColor,
+            accessory,
+            expression,
+          }),
+        });
+        toast({ title: "✓ Mynd saved!", duration: 2000 });
+      } catch { /* silent fail */ }
     }, 1500);
-  }, [user, petColor, accessory, expression]);
+  }, [user, petColor, accessory, expression, getAuthHeaders, supabaseUrl]);
 
   useEffect(() => {
     if (user) savePetConfig();
