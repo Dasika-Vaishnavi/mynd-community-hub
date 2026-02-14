@@ -1,10 +1,26 @@
 import { motion } from "framer-motion";
 import { PostCard } from "../components/PostCard";
-import { MyndPet, getKarmaTier } from "../components/MyndPet";
+import { MyndPet } from "../components/MyndPet";
 import { TrendingUp, Flame, Clock, ArrowUp, Sparkles } from "lucide-react";
 import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { supabase } from "@/integrations/supabase/client";
 
-const MOCK_POSTS = [
+interface FeedPost {
+  author: string;
+  karma: number;
+  timeAgo: string;
+  title: string;
+  preview: string;
+  flair: string;
+  space: string;
+  upvotes: number;
+  comments: number;
+  petColor?: string;
+  petExpression?: "happy" | "calm" | "sleepy" | "excited";
+}
+
+const MOCK_POSTS: FeedPost[] = [
   {
     author: "MindfulMango",
     karma: 2340,
@@ -72,6 +88,45 @@ const MOCK_POSTS = [
   },
 ];
 
+const toTimeAgo = (isoDate: string) => {
+  const createdAt = new Date(isoDate);
+  const diffInHours = Math.max(1, Math.floor((Date.now() - createdAt.getTime()) / (1000 * 60 * 60)));
+
+  if (diffInHours < 24) return `${diffInHours}h`;
+  return `${Math.floor(diffInHours / 24)}d`;
+};
+
+const fetchPosts = async (): Promise<FeedPost[]> => {
+  if (!supabase) return MOCK_POSTS;
+
+  const { data, error } = await supabase
+    .from("posts")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(20);
+
+  if (error) {
+    console.error("Failed to fetch posts:", error.message);
+    return MOCK_POSTS;
+  }
+
+  if (!data || data.length === 0) return MOCK_POSTS;
+
+  return data.map((post) => ({
+    author: post.author_name,
+    karma: post.author_karma,
+    timeAgo: toTimeAgo(post.created_at),
+    title: post.title,
+    preview: post.preview,
+    flair: post.flair,
+    space: post.space,
+    upvotes: post.upvotes,
+    comments: post.comments,
+    petColor: post.pet_color ?? "hsl(252, 75%, 60%)",
+    petExpression: post.pet_expression ?? "happy",
+  }));
+};
+
 const SORT_OPTIONS = [
   { key: "hot", label: "Hot", icon: Flame },
   { key: "new", label: "New", icon: Clock },
@@ -81,6 +136,10 @@ const SORT_OPTIONS = [
 
 const Index = () => {
   const [sort, setSort] = useState("hot");
+  const { data: posts = MOCK_POSTS, isLoading } = useQuery({
+    queryKey: ["posts-feed"],
+    queryFn: fetchPosts,
+  });
 
   return (
     <div className="max-w-3xl mx-auto px-4 py-6 lg:py-8">
@@ -124,7 +183,8 @@ const Index = () => {
 
       {/* Feed */}
       <div className="space-y-4">
-        {MOCK_POSTS.map((post, i) => (
+        {isLoading ? <p className="text-sm text-muted-foreground">Loading feed...</p> : null}
+        {posts.map((post, i) => (
           <PostCard key={i} {...post} />
         ))}
       </div>

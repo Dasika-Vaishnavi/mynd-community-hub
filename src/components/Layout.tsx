@@ -1,9 +1,10 @@
 import { ReactNode } from "react";
 import { Link, useLocation } from "react-router-dom";
-import { Home, Brain, Users, User, Bell, PenSquare, TrendingUp, Sparkles } from "lucide-react";
+import { Home, Brain, Users, User, Bell, PenSquare, TrendingUp, Sparkles, LogIn, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { MyndPet } from "./MyndPet";
 import { MyndPetWidget } from "./MyndPetWidget";
+import { useAuth } from "@/contexts/AuthContext";
 
 const NAV_ITEMS = [
   { path: "/", label: "Home", icon: Home },
@@ -22,6 +23,20 @@ const TRENDING_SPACES = [
 
 export const Layout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
+  const { user, isConfigured, signOut } = useAuth();
+  const isAuthRoute = location.pathname === "/auth";
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  if (isAuthRoute) {
+    return <main className="min-h-screen bg-background noise-overlay relative z-10">{children}</main>;
+  }
 
   return (
     <div className="min-h-screen bg-background noise-overlay">
@@ -63,6 +78,26 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           </button>
         </div>
 
+        <div className="px-3 mb-3">
+          {isConfigured && user ? (
+            <button
+              onClick={handleSignOut}
+              className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-display font-semibold bg-muted text-foreground hover:bg-muted/80 transition-colors"
+            >
+              <LogOut size={16} />
+              Sign out
+            </button>
+          ) : (
+            <Link
+              to="/auth"
+              className="w-full flex items-center justify-center gap-2 rounded-xl py-2.5 text-sm font-display font-semibold bg-muted text-foreground hover:bg-muted/80 transition-colors"
+            >
+              <LogIn size={16} />
+              Sign in
+            </Link>
+          )}
+        </div>
+
         {/* Mynd Pet Widget */}
         <div className="px-3 mb-3">
           <MyndPetWidget
@@ -102,6 +137,23 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           <h1 className="font-display font-black text-xl text-foreground">Mynd</h1>
         </div>
         <div className="flex items-center gap-2">
+          {isConfigured && user ? (
+            <button
+              onClick={handleSignOut}
+              className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground"
+              aria-label="Sign out"
+            >
+              <LogOut size={20} />
+            </button>
+          ) : (
+            <Link
+              to="/auth"
+              className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground"
+              aria-label="Sign in"
+            >
+              <LogIn size={20} />
+            </Link>
+          )}
           <button className="p-2 rounded-full hover:bg-muted transition-colors text-muted-foreground">
             <Sparkles size={20} />
           </button>

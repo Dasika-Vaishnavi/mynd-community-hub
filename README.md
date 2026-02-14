@@ -59,6 +59,31 @@ This project is built with:
 - React
 - shadcn-ui
 - Tailwind CSS
+- Supabase (Auth + Postgres)
+
+## Supabase setup (Auth + Database)
+
+1. Copy environment variables:
+
+```sh
+cp .env.example .env
+```
+
+2. Fill `.env` with your Supabase project values:
+- `VITE_SUPABASE_URL`
+- `VITE_SUPABASE_ANON_KEY`
+
+3. Open Supabase SQL Editor and run:
+- `supabase/schema.sql`
+- Optional seed data: `supabase/seed.sql`
+
+4. In Supabase dashboard, enable Email/Password auth provider (Authentication > Providers).
+
+5. Restart your dev server:
+
+```sh
+npm run dev
+```
 
 ## How can I deploy this project?
 
