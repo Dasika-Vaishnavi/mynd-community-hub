@@ -10,8 +10,10 @@ import { ProfileCommentsList } from "../components/ProfileCommentsList";
 import { ProfileSessionsList } from "../components/ProfileSessionsList";
 import { Progress } from "../components/ui/progress";
 import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings, Sparkles, Palette, Volume2 } from "lucide-react";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 const USER_INITIAL = {
   name: "MindfulMango",
@@ -76,6 +78,7 @@ const ACCESSORIES = ["none", "flower_crown", "star_halo", "tiny_hat", "rainbow_a
 const TABS = ["Posts", "Comments", "Saved", "Sessions"];
 
 const Profile = () => {
+  const { user } = useAuth();
   const [tab, setTab] = useState("Posts");
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
@@ -93,8 +96,72 @@ const Profile = () => {
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [accessory, setAccessory] = useState<typeof ACCESSORIES[number]>("none");
   const [showPetControls, setShowPetControls] = useState(false);
+  const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const tier = getKarmaTier(userKarma);
+
+  // ── Load pet config from DB ─────────────────────────────────
+  useEffect(() => {
+    if (!user || !supabase) return;
+    const load = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      try {
+        const res = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/mynd_pets?user_id=eq.${user.id}&select=*`,
+          {
+            headers: {
+              "Content-Type": "application/json",
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              Authorization: `Bearer ${session.access_token}`,
+            },
+          }
+        );
+        if (!res.ok) return;
+        const rows = await res.json();
+        if (rows.length > 0) {
+          const d = rows[0];
+          if (d.base_color) setPetColor(d.base_color);
+          if (d.accessory) setAccessory(d.accessory as any);
+          if (d.expression) setExpression(d.expression as ExpressionState);
+        }
+      } catch { /* no saved pet */ }
+    };
+    load();
+  }, [user]);
+
+  // ── Auto-save pet config with 1.5s debounce ─────────────────
+  const savePetConfig = useCallback(async () => {
+    if (!user || !supabase) return;
+    if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+    saveTimeoutRef.current = setTimeout(async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) return;
+      try {
+        await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/mynd_pets`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+            Authorization: `Bearer ${session.access_token}`,
+            Prefer: "resolution=merge-duplicates",
+          },
+          body: JSON.stringify({
+            user_id: user.id,
+            base_color: petColor,
+            accessory,
+            expression,
+          }),
+        });
+        toast({ title: "✓ Mynd saved!", duration: 2000 });
+      } catch { /* silent */ }
+    }, 1500);
+  }, [user, petColor, accessory, expression]);
+
+  // Trigger save on customization changes
+  useEffect(() => {
+    if (user) savePetConfig();
+  }, [petColor, accessory, savePetConfig]);
   const nextTier = KARMA_TIERS.find((t) => t.min > userKarma);
   const progress = nextTier ? ((userKarma - tier.min) / (nextTier.min - tier.min)) * 100 : 100;
   const karmaToNext = nextTier ? nextTier.min - userKarma : 0;
