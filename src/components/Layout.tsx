@@ -3,7 +3,7 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Brain, Users, User, Bell, PenSquare, TrendingUp, Sparkles, LogIn, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { MyndPet } from "./MyndPet";
-import { MyndPetWidget } from "./MyndPetWidget";
+import { MyndPetSidebarWidget } from "./MyndPetSidebarWidget";
 import { useAuth } from "@/contexts/AuthContext";
 import { useToast } from "@/hooks/use-toast";
 import { CreatePostDialog } from "./CreatePostDialog";
@@ -126,10 +126,8 @@ export const Layout = ({ children }: { children: ReactNode }) => {
 
         {/* Mynd Pet Widget */}
         <div className="px-3 mb-3">
-          <MyndPetWidget
+          <MyndPetSidebarWidget
             karma={2340}
-            petColor="hsl(329, 86%, 70%)"
-            petExpression="happy"
             myndAge="4 months"
             username="MindfulMango"
           />
