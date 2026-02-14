@@ -1,14 +1,17 @@
-# MyndSo
+# MYnd
 
-**Mental wellness through community, not clinics.**
+## **Mental wellness through community, not clinics.**
 
-MyndSo is an anonymous, karma-driven mental health platform combining peer support communities, AI companions, and therapy access — real and virtual — into one cohesive experience.
+# [Link to the project](https://myndspace.lovable.app/)
+# [Screen Recording based demo](https://www.loom.com/share/11cd21e36e6847c3b6b033f7e1be579f)
+# [Youtube Video](https://youtu.be/x0w2Ayd84dg?si=tcqjSoAzXv3gjaOe)
+MYnd is an anonymous, karma-driven mental health platform combining peer support communities, AI companions, and therapy access — real and virtual — into one cohesive experience.
 
 ---
 
 ## Platform Philosophy
 
-Traditional mental health apps isolate users into clinical workflows. MyndSo inverts this: community is the foundation, therapy is a tool within it. Identity stays anonymous, growth is gamified through karma tiers, and an ever-present AI companion (Mynd Pet) provides continuity between sessions.
+### Traditional mental health apps isolate users into clinical workflows. MYnd inverts this: community is the foundation, therapy is a tool within it. Identity stays anonymous, growth is gamified through karma tiers, and an ever-present AI companion (Mynd Pet) provides continuity between sessions.
 
 ---
 
@@ -302,8 +305,8 @@ Deno.serve(async (req) => {
 ## Local Development
 
 ```sh
-git clone https://github.com/your-org/myndso
-cd myndso
+git clone https://github.com/your-org/MYnd
+cd MYnd
 npm install
 cp .env.example .env
 # Fill in:
@@ -334,4 +337,4 @@ supabase secrets set ELEVENLABS_API_KEY=your_key_here
 
 ---
 
-*MyndSo — Healing, together.*
+*MYnd — Healing, together.*
