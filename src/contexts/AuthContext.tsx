@@ -9,7 +9,7 @@ interface AuthContextValue {
   isLoading: boolean;
   isConfigured: boolean;
   signInWithPassword: (email: string, password: string) => Promise<void>;
-  signUpWithPassword: (email: string, password: string) => Promise<void>;
+  signUpWithPassword: (email: string, password: string) => Promise<{ needsEmailVerification: boolean }>;
   signOut: () => Promise<void>;
 }
 
@@ -72,8 +72,10 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
       signUpWithPassword: async (email, password) => {
         if (!supabase) throw new Error("Supabase is not configured.");
 
-        const { error } = await supabase.auth.signUp({ email, password });
+        const { data, error } = await supabase.auth.signUp({ email, password });
         if (error) throw new Error(error.message);
+
+        return { needsEmailVerification: !data.session };
       },
       signOut: async () => {
         if (!supabase) return;

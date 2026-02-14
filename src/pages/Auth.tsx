@@ -11,6 +11,7 @@ const Auth = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [info, setInfo] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   if (isLoading) {
@@ -38,13 +39,18 @@ const Auth = () => {
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setError(null);
+    setInfo(null);
     setIsSubmitting(true);
 
     try {
       if (mode === "signin") {
         await signInWithPassword(email, password);
       } else {
-        await signUpWithPassword(email, password);
+        const result = await signUpWithPassword(email, password);
+        if (result.needsEmailVerification) {
+          setInfo("Account created. Check your inbox and verify your email before signing in.");
+          setMode("signin");
+        }
       }
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : "Auth request failed.");
@@ -90,6 +96,7 @@ const Auth = () => {
           </div>
 
           {error ? <p className="text-sm text-destructive">{error}</p> : null}
+          {info ? <p className="text-sm text-primary">{info}</p> : null}
 
           <Button type="submit" className="w-full" disabled={isSubmitting}>
             {isSubmitting ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}

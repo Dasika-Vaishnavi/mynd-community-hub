@@ -1,10 +1,12 @@
-import { ReactNode } from "react";
-import { Link, useLocation } from "react-router-dom";
+import { ReactNode, useState } from "react";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Home, Brain, Users, User, Bell, PenSquare, TrendingUp, Sparkles, LogIn, LogOut } from "lucide-react";
 import { motion } from "framer-motion";
 import { MyndPet } from "./MyndPet";
 import { MyndPetWidget } from "./MyndPetWidget";
 import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
+import { CreatePostDialog } from "./CreatePostDialog";
 
 const NAV_ITEMS = [
   { path: "/", label: "Home", icon: Home },
@@ -23,8 +25,11 @@ const TRENDING_SPACES = [
 
 export const Layout = ({ children }: { children: ReactNode }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const { toast } = useToast();
   const { user, isConfigured, signOut } = useAuth();
   const isAuthRoute = location.pathname === "/auth";
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
 
   const handleSignOut = async () => {
     try {
@@ -32,6 +37,24 @@ export const Layout = ({ children }: { children: ReactNode }) => {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const handleCreatePost = () => {
+    if (!isConfigured) {
+      toast({
+        title: "Supabase not configured",
+        description: "Add Supabase environment variables and restart the app.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!user) {
+      navigate("/auth");
+      return;
+    }
+
+    setIsCreateDialogOpen(true);
   };
 
   if (isAuthRoute) {
@@ -72,7 +95,10 @@ export const Layout = ({ children }: { children: ReactNode }) => {
         </nav>
 
         <div className="px-3 mb-3">
-          <button className="w-full flex items-center justify-center gap-2 gradient-primary text-primary-foreground rounded-xl py-3 font-display font-bold text-sm shadow-soft hover:opacity-90 transition-opacity">
+          <button
+            onClick={handleCreatePost}
+            className="w-full flex items-center justify-center gap-2 gradient-primary text-primary-foreground rounded-xl py-3 font-display font-bold text-sm shadow-soft hover:opacity-90 transition-opacity"
+          >
             <PenSquare size={18} />
             Create Post
           </button>
@@ -191,6 +217,8 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           );
         })}
       </nav>
+
+      <CreatePostDialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen} />
     </div>
   );
 };
