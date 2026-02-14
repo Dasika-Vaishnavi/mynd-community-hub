@@ -1,6 +1,6 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { MyndPet, getKarmaTier, KARMA_TIERS } from "../components/MyndPet";
-import { MyndPetCustomizer } from "../components/MyndPetCustomizer";
+import { MyndPetAlive, ExpressionState, ReactionAnimation } from "../components/MyndPetAlive";
+import { getKarmaTier, KARMA_TIERS } from "../components/MyndPet";
 import { EditProfileDialog } from "../components/EditProfileDialog";
 import { MyndChatPanel } from "../components/MyndChatPanel";
 import { TierCelebrationModal } from "../components/TierCelebrationModal";
@@ -9,7 +9,7 @@ import { ProfilePostsList } from "../components/ProfilePostsList";
 import { ProfileCommentsList } from "../components/ProfileCommentsList";
 import { ProfileSessionsList } from "../components/ProfileSessionsList";
 import { Progress } from "../components/ui/progress";
-import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings, Sparkles, Palette } from "lucide-react";
+import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings, Sparkles, Palette, Volume2 } from "lucide-react";
 import { useState, useEffect } from "react";
 import { toast } from "@/hooks/use-toast";
 
@@ -24,7 +24,6 @@ const USER_INITIAL = {
   posts: 47,
   comments: 213,
   petColor: "hsl(329, 86%, 70%)",
-  petExpression: "happy" as const,
   joinDate: "Oct 2025",
 };
 
@@ -52,11 +51,32 @@ const activityColor = (level: number) => {
   return colors[Math.min(level, 4)];
 };
 
+const EXPRESSIONS: ExpressionState[] = [
+  "HAPPY", "EXCITED", "PROUD", "LISTENING",
+  "THINKING", "CHEERING", "SLEEPY", "LOVE",
+];
+
+const REACTIONS: ReactionAnimation[] = [
+  "BOUNCE", "SPIN", "SHAKE_HEAD", "GROW", "PARTICLE_BURST",
+];
+
+const PET_COLORS = [
+  "hsl(252, 75%, 60%)",
+  "hsl(329, 86%, 70%)",
+  "hsl(270, 95%, 75%)",
+  "hsl(142, 69%, 58%)",
+  "hsl(43, 96%, 56%)",
+  "hsl(199, 89%, 48%)",
+  "hsl(0, 84%, 60%)",
+  "hsl(25, 95%, 53%)",
+];
+
+const ACCESSORIES = ["none", "flower_crown", "star_halo", "tiny_hat", "rainbow_aura"] as const;
+
 const TABS = ["Posts", "Comments", "Saved", "Sessions"];
 
 const Profile = () => {
   const [tab, setTab] = useState("Posts");
-  const [customizerOpen, setCustomizerOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
   const [chatOpen, setChatOpen] = useState(false);
   const [celebrationOpen, setCelebrationOpen] = useState(false);
@@ -65,15 +85,24 @@ const Profile = () => {
   const [userBio, setUserBio] = useState(USER_INITIAL.bio);
   const [userPronouns, setUserPronouns] = useState(USER_INITIAL.pronouns);
   const [userKarma, setUserKarma] = useState(USER_INITIAL.karma);
+
+  // MyndPetAlive state
   const [petColor, setPetColor] = useState(USER_INITIAL.petColor);
-  const [petExpression, setPetExpression] = useState<"happy" | "calm" | "sleepy" | "excited">(USER_INITIAL.petExpression);
-  const [petAccessory, setPetAccessory] = useState<"none" | "crown" | "flower" | "halo" | "sparkle" | "headphones">("none");
-  const [petIsThinking, setPetIsThinking] = useState(false);
+  const [expression, setExpression] = useState<ExpressionState>("HAPPY");
+  const [reaction, setReaction] = useState<ReactionAnimation>("NONE");
+  const [isSpeaking, setIsSpeaking] = useState(false);
+  const [accessory, setAccessory] = useState<typeof ACCESSORIES[number]>("none");
+  const [showPetControls, setShowPetControls] = useState(false);
 
   const tier = getKarmaTier(userKarma);
   const nextTier = KARMA_TIERS.find((t) => t.min > userKarma);
   const progress = nextTier ? ((userKarma - tier.min) / (nextTier.min - tier.min)) * 100 : 100;
   const karmaToNext = nextTier ? nextTier.min - userKarma : 0;
+
+  const triggerReaction = (r: ReactionAnimation) => {
+    setReaction(r);
+    setTimeout(() => setReaction("NONE"), 800);
+  };
 
   // Proactive toast on load if streak >= 7
   useEffect(() => {
@@ -99,11 +128,6 @@ const Profile = () => {
     }
   };
 
-  const handlePetStateChange = (state: { expression: "happy" | "calm" | "sleepy" | "excited"; isThinking: boolean }) => {
-    setPetExpression(state.expression);
-    setPetIsThinking(state.isThinking);
-  };
-
   const userContext = {
     name: userName,
     karma: userKarma,
@@ -126,23 +150,19 @@ const Profile = () => {
       >
         <div className="absolute top-0 left-0 right-0 h-24 gradient-primary opacity-20" />
         <div className="relative z-10">
-          {/* Animated pet wrapper */}
-          <motion.div
-            animate={petIsThinking ? { scale: [1, 1.03, 1] } : { scale: 1 }}
-            transition={petIsThinking ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" } : {}}
-          >
-            <MyndPet
-              size={110}
-              color={petColor}
-              expression={petExpression}
-              accessory={petAccessory}
-              glow
+          {/* Living Mynd Pet */}
+          <div className="flex justify-center mb-3">
+            <MyndPetAlive
+              baseColor={petColor}
+              size="xl"
+              expression={expression}
+              isSpeaking={isSpeaking}
+              reaction={reaction}
+              accessory={accessory}
               level={tier.level}
-              showKarma
-              karma={userKarma}
-              className="mx-auto mb-3"
+              onClick={() => setShowPetControls(!showPetControls)}
             />
-          </motion.div>
+          </div>
 
           <h1 className="font-display font-black text-2xl text-foreground mb-1">{userName}</h1>
           <p className="text-muted-foreground text-sm mb-1">{userPronouns} · Joined {USER_INITIAL.joinDate}</p>
@@ -180,7 +200,7 @@ const Profile = () => {
 
           <div className="flex items-center justify-center gap-2">
             <button
-              onClick={() => setCustomizerOpen(true)}
+              onClick={() => setShowPetControls(!showPetControls)}
               className="text-xs px-4 py-1.5 rounded-xl gradient-primary text-primary-foreground font-display font-semibold hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 shadow-soft"
             >
               <Palette size={13} />
@@ -196,6 +216,114 @@ const Profile = () => {
           </div>
         </div>
       </motion.div>
+
+      {/* Pet Controls Panel */}
+      <AnimatePresence>
+        {showPetControls && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="overflow-hidden mb-6"
+          >
+            <div className="bg-card rounded-3xl shadow-card p-5 space-y-5">
+              {/* Speaking toggle */}
+              <div className="flex justify-center">
+                <button
+                  onClick={() => setIsSpeaking(!isSpeaking)}
+                  className={`flex items-center gap-2 px-5 py-2 rounded-2xl font-display font-bold text-sm transition-all ${
+                    isSpeaking
+                      ? "bg-accent text-accent-foreground"
+                      : "gradient-primary text-primary-foreground"
+                  }`}
+                >
+                  <Volume2 size={16} />
+                  {isSpeaking ? "Stop Speaking" : "Simulate Speaking"}
+                </button>
+              </div>
+
+              {/* Expressions */}
+              <div>
+                <h3 className="font-display font-bold text-sm text-foreground mb-2">Expressions</h3>
+                <div className="grid grid-cols-4 gap-2">
+                  {EXPRESSIONS.map((e) => (
+                    <button
+                      key={e}
+                      onClick={() => setExpression(e)}
+                      className={`flex flex-col items-center gap-1.5 p-3 rounded-2xl transition-all ${
+                        expression === e
+                          ? "bg-primary/10 ring-2 ring-primary"
+                          : "bg-muted/50 hover:bg-muted"
+                      }`}
+                    >
+                      <MyndPetAlive
+                        baseColor={petColor}
+                        size="sm"
+                        expression={e}
+                        accessory="none"
+                      />
+                      <span className="text-[9px] font-display font-bold text-foreground">{e}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Reactions */}
+              <div>
+                <h3 className="font-display font-bold text-sm text-foreground mb-2">Reactions</h3>
+                <div className="flex flex-wrap gap-2">
+                  {REACTIONS.map((r) => (
+                    <button
+                      key={r}
+                      onClick={() => triggerReaction(r)}
+                      className="px-3 py-1.5 rounded-xl bg-muted/50 text-xs font-display font-bold text-foreground hover:bg-primary/10 hover:text-primary transition-all"
+                    >
+                      {r}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Colors */}
+              <div>
+                <h3 className="font-display font-bold text-sm text-foreground mb-2">Colors</h3>
+                <div className="flex gap-2.5 flex-wrap">
+                  {PET_COLORS.map((c) => (
+                    <button
+                      key={c}
+                      onClick={() => setPetColor(c)}
+                      className={`w-9 h-9 rounded-full transition-all hover:scale-110 ${
+                        petColor === c ? "ring-2 ring-primary ring-offset-2 ring-offset-card scale-110" : ""
+                      }`}
+                      style={{ backgroundColor: c }}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              {/* Accessories */}
+              <div>
+                <h3 className="font-display font-bold text-sm text-foreground mb-2">Accessories</h3>
+                <div className="flex flex-wrap gap-2">
+                  {ACCESSORIES.map((a) => (
+                    <button
+                      key={a}
+                      onClick={() => setAccessory(a)}
+                      className={`px-3 py-1.5 rounded-xl text-xs font-display font-bold transition-all ${
+                        accessory === a
+                          ? "gradient-primary text-primary-foreground"
+                          : "bg-muted/50 text-foreground hover:bg-primary/10"
+                      }`}
+                    >
+                      {a === "none" ? "None" : a.replace(/_/g, " ")}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
@@ -320,9 +448,9 @@ const Profile = () => {
         onClose={() => setChatOpen(false)}
         userContext={userContext}
         petColor={petColor}
-        petExpression={petExpression}
+        petExpression="happy"
         tierLevel={tier.level}
-        onPetStateChange={handlePetStateChange}
+        onPetStateChange={() => {}}
       />
 
       {/* Tier Celebration Modal */}
@@ -334,21 +462,6 @@ const Profile = () => {
         tierColor={tier.color}
         tierLevel={tier.level}
         petColor={petColor}
-      />
-
-      {/* Mynd Pet Customizer */}
-      <MyndPetCustomizer
-        open={customizerOpen}
-        onClose={() => setCustomizerOpen(false)}
-        karma={userKarma}
-        initialColor={petColor}
-        initialExpression={petExpression}
-        initialAccessory={petAccessory}
-        onSave={({ color, expression, accessory }) => {
-          setPetColor(color);
-          setPetExpression(expression);
-          setPetAccessory(accessory);
-        }}
       />
 
       {/* Edit Profile Dialog */}
