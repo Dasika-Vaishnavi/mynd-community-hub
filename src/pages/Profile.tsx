@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { MyndPet, getKarmaTier, KARMA_TIERS } from "../components/MyndPet";
+import { MyndPetCustomizer } from "../components/MyndPetCustomizer";
 import { Progress } from "../components/ui/progress";
-import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings, Sparkles } from "lucide-react";
+import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings, Sparkles, Palette } from "lucide-react";
 import { useState } from "react";
 
 const USER = {
@@ -47,6 +48,10 @@ const TABS = ["Posts", "Comments", "Saved", "Sessions"];
 
 const Profile = () => {
   const [tab, setTab] = useState("Posts");
+  const [customizerOpen, setCustomizerOpen] = useState(false);
+  const [petColor, setPetColor] = useState(USER.petColor);
+  const [petExpression, setPetExpression] = useState<"happy" | "calm" | "sleepy" | "excited">(USER.petExpression);
+  const [petAccessory, setPetAccessory] = useState<"none" | "crown" | "flower" | "halo" | "sparkle" | "headphones">("none");
   const tier = getKarmaTier(USER.karma);
 
   return (
@@ -61,8 +66,9 @@ const Profile = () => {
         <div className="relative z-10">
           <MyndPet
             size={110}
-            color={USER.petColor}
-            expression={USER.petExpression}
+            color={petColor}
+            expression={petExpression}
+            accessory={petAccessory}
             glow
             level={tier.level}
             showKarma
@@ -108,10 +114,19 @@ const Profile = () => {
             );
           })()}
 
-          <button className="text-xs px-4 py-1.5 rounded-xl bg-muted text-foreground font-display font-semibold hover:bg-muted/80 transition-colors inline-flex items-center gap-1.5">
-            <Settings size={13} />
-            Edit Profile
-          </button>
+          <div className="flex items-center justify-center gap-2">
+            <button
+              onClick={() => setCustomizerOpen(true)}
+              className="text-xs px-4 py-1.5 rounded-xl gradient-primary text-primary-foreground font-display font-semibold hover:opacity-90 transition-opacity inline-flex items-center gap-1.5 shadow-soft"
+            >
+              <Palette size={13} />
+              Customize Mynd
+            </button>
+            <button className="text-xs px-4 py-1.5 rounded-xl bg-muted text-foreground font-display font-semibold hover:bg-muted/80 transition-colors inline-flex items-center gap-1.5">
+              <Settings size={13} />
+              Edit Profile
+            </button>
+          </div>
         </div>
       </motion.div>
 
@@ -210,6 +225,21 @@ const Profile = () => {
       <div className="bg-card rounded-2xl shadow-card p-8 text-center">
         <p className="text-muted-foreground text-sm">Your {tab.toLowerCase()} will appear here</p>
       </div>
+
+      {/* Mynd Pet Customizer */}
+      <MyndPetCustomizer
+        open={customizerOpen}
+        onClose={() => setCustomizerOpen(false)}
+        karma={USER.karma}
+        initialColor={petColor}
+        initialExpression={petExpression}
+        initialAccessory={petAccessory}
+        onSave={({ color, expression, accessory }) => {
+          setPetColor(color);
+          setPetExpression(expression);
+          setPetAccessory(accessory);
+        }}
+      />
     </div>
   );
 };
