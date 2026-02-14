@@ -8,6 +8,7 @@ import Index from "./pages/Index";
 import TherapyConnect from "./pages/TherapyConnect";
 import Profile from "./pages/Profile";
 import Community from "./pages/Community";
+import SpaceDetail from "./pages/SpaceDetail";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -24,6 +25,7 @@ const App = () => (
             <Route path="/therapy" element={<TherapyConnect />} />
             <Route path="/profile" element={<Profile />} />
             <Route path="/community" element={<Community />} />
+            <Route path="/space/:spaceName" element={<SpaceDetail />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Layout>
