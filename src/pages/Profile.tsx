@@ -1,6 +1,7 @@
 import { motion } from "framer-motion";
 import { MyndPet, getKarmaTier, KARMA_TIERS } from "../components/MyndPet";
-import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings } from "lucide-react";
+import { Progress } from "../components/ui/progress";
+import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings, Sparkles } from "lucide-react";
 import { useState } from "react";
 
 const USER = {
@@ -59,28 +60,53 @@ const Profile = () => {
         <div className="absolute top-0 left-0 right-0 h-24 gradient-primary opacity-20" />
         <div className="relative z-10">
           <MyndPet
-            size={100}
+            size={110}
             color={USER.petColor}
             expression={USER.petExpression}
             glow
             level={tier.level}
+            showKarma
+            karma={USER.karma}
             className="mx-auto mb-3"
           />
           <h1 className="font-display font-black text-2xl text-foreground mb-1">{USER.name}</h1>
           <p className="text-muted-foreground text-sm mb-1">{USER.pronouns} · Joined {USER.joinDate}</p>
           <p className="text-foreground/80 text-sm mb-3 max-w-md mx-auto">{USER.bio}</p>
 
-          <div className="flex items-center justify-center gap-2 mb-4">
+          <div className="flex items-center justify-center gap-2 mb-3">
             <span
-              className="text-xs font-mono font-bold px-3 py-1 rounded-full"
+              className="text-xs font-mono font-bold px-3 py-1 rounded-full inline-flex items-center gap-1"
               style={{ backgroundColor: `${tier.color}20`, color: tier.color }}
             >
-              {tier.name} · {USER.karma.toLocaleString()} karma
+              {(tier as any).emoji} {tier.name} · {USER.karma.toLocaleString()} karma
             </span>
             <span className="text-xs font-mono px-3 py-1 rounded-full bg-muted text-muted-foreground">
               🐣 {USER.myndAge} old
             </span>
           </div>
+
+          {/* Tier progress */}
+          {(() => {
+            const nextTier = KARMA_TIERS.find((t) => t.min > USER.karma);
+            if (!nextTier) return (
+              <p className="text-xs text-muted-foreground mb-3 flex items-center justify-center gap-1">
+                <Sparkles size={12} /> Max tier reached!
+              </p>
+            );
+            const progress = ((USER.karma - tier.min) / (nextTier.min - tier.min)) * 100;
+            return (
+              <div className="max-w-xs mx-auto mb-3 space-y-1">
+                <div className="flex justify-between text-[10px] text-muted-foreground">
+                  <span>{tier.name}</span>
+                  <span>{nextTier.name}</span>
+                </div>
+                <Progress value={progress} className="h-2" />
+                <p className="text-[10px] text-muted-foreground text-center">
+                  {(nextTier.min - USER.karma).toLocaleString()} karma to next tier
+                </p>
+              </div>
+            );
+          })()}
 
           <button className="text-xs px-4 py-1.5 rounded-xl bg-muted text-foreground font-display font-semibold hover:bg-muted/80 transition-colors inline-flex items-center gap-1.5">
             <Settings size={13} />

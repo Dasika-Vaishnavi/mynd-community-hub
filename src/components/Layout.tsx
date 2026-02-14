@@ -3,6 +3,7 @@ import { Link, useLocation } from "react-router-dom";
 import { Home, Brain, Users, User, Bell, PenSquare, TrendingUp, Sparkles } from "lucide-react";
 import { motion } from "framer-motion";
 import { MyndPet } from "./MyndPet";
+import { MyndPetWidget } from "./MyndPetWidget";
 
 const NAV_ITEMS = [
   { path: "/", label: "Home", icon: Home },
@@ -60,6 +61,17 @@ export const Layout = ({ children }: { children: ReactNode }) => {
             <PenSquare size={18} />
             Create Post
           </button>
+        </div>
+
+        {/* Mynd Pet Widget */}
+        <div className="px-3 mb-3">
+          <MyndPetWidget
+            karma={2340}
+            petColor="hsl(329, 86%, 70%)"
+            petExpression="happy"
+            myndAge="4 months"
+            username="MindfulMango"
+          />
         </div>
 
         {/* Trending */}
