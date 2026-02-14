@@ -97,6 +97,7 @@ const Profile = () => {
   const [accessory, setAccessory] = useState<typeof ACCESSORIES[number]>("none");
   const [showPetControls, setShowPetControls] = useState(false);
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const initialLoadDoneRef = useRef(false);
 
   const tier = getKarmaTier(userKarma);
 
@@ -126,25 +127,49 @@ const Profile = () => {
           if (d.expression) setExpression(d.expression as ExpressionState);
         }
       } catch { /* no saved pet */ }
+      // Mark initial load done after state is set
+      setTimeout(() => { initialLoadDoneRef.current = true; }, 100);
     };
     load();
   }, [user]);
 
   // ── Auto-save pet config with 1.5s debounce ─────────────────
-  const savePetConfig = useCallback(async () => {
-    if (!user || !supabase) return;
+  useEffect(() => {
+    if (!user || !supabase || !initialLoadDoneRef.current) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (!session) return;
       try {
+        // Try PATCH first (update existing)
+        const patchRes = await fetch(
+          `${import.meta.env.VITE_SUPABASE_URL}/rest/v1/mynd_pets?user_id=eq.${user.id}`,
+          {
+            method: "PATCH",
+            headers: {
+              "Content-Type": "application/json",
+              apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
+              Authorization: `Bearer ${session.access_token}`,
+              Prefer: "return=minimal",
+            },
+            body: JSON.stringify({
+              base_color: petColor,
+              accessory,
+              expression,
+            }),
+          }
+        );
+        if (patchRes.ok) {
+          toast({ title: "✓ Mynd saved!", duration: 2000 });
+          return;
+        }
+        // Fallback: INSERT if no row exists
         await fetch(`${import.meta.env.VITE_SUPABASE_URL}/rest/v1/mynd_pets`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
             apikey: import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY,
             Authorization: `Bearer ${session.access_token}`,
-            Prefer: "resolution=merge-duplicates",
           },
           body: JSON.stringify({
             user_id: user.id,
@@ -156,12 +181,9 @@ const Profile = () => {
         toast({ title: "✓ Mynd saved!", duration: 2000 });
       } catch { /* silent */ }
     }, 1500);
-  }, [user, petColor, accessory, expression]);
+    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
+  }, [user, petColor, accessory]);
 
-  // Trigger save on customization changes
-  useEffect(() => {
-    if (user) savePetConfig();
-  }, [petColor, accessory, savePetConfig]);
   const nextTier = KARMA_TIERS.find((t) => t.min > userKarma);
   const progress = nextTier ? ((userKarma - tier.min) / (nextTier.min - tier.min)) * 100 : 100;
   const karmaToNext = nextTier ? nextTier.min - userKarma : 0;
