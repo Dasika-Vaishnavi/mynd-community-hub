@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 import { Users, TrendingUp, Plus, Search, Hash } from "lucide-react";
 import { MyndPet } from "../components/MyndPet";
 import { useState, useEffect } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, Link } from "react-router-dom";
 
 const SPACES = [
   { name: "UnwindYourMynd", description: "A general safe space for mental health discussions", members: "12.4k", icon: "🧘", color: "hsl(252, 75%, 60%)" },
@@ -58,8 +58,11 @@ const Community = () => {
         {/* Space cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           {filtered.map((space) => (
-            <motion.div
+            <Link
+              to={`/space/${encodeURIComponent(space.name)}`}
               key={space.name}
+            >
+            <motion.div
               initial={{ opacity: 0, y: 12 }}
               animate={{ opacity: 1, y: 0 }}
               whileHover={{ y: -2 }}
@@ -89,6 +92,7 @@ const Community = () => {
                 </button>
               </div>
             </motion.div>
+            </Link>
           ))}
         </div>
       </motion.div>
