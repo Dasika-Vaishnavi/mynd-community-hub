@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Pencil, Check, X } from "lucide-react";
+import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Pencil, Check, X, Trash2 } from "lucide-react";
 import { MyndPet, getKarmaTier } from "./MyndPet";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/contexts/AuthContext";
@@ -259,7 +259,7 @@ export const PostCard = ({
               {commentList.map((c) => {
                 const cTier = getKarmaTier(c.karma);
                 return (
-                  <div key={c.id} className="flex gap-2.5">
+                  <div key={c.id} className="flex gap-2.5 group">
                     <MyndPet size={28} color={c.petColor} expression={c.petExpression} level={cTier.level} />
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-1.5">
@@ -268,6 +268,15 @@ export const PostCard = ({
                       </div>
                       <p className="text-sm text-foreground/85 mt-0.5">{c.content}</p>
                     </div>
+                    {editable && (
+                      <button
+                        onClick={() => setCommentList((prev) => prev.filter((cm) => cm.id !== c.id))}
+                        className="p-1 rounded-lg text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors opacity-0 group-hover:opacity-100 shrink-0 self-start"
+                        title="Delete comment"
+                      >
+                        <Trash2 size={13} />
+                      </button>
+                    )}
                   </div>
                 );
               })}
