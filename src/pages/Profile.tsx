@@ -5,6 +5,9 @@ import { EditProfileDialog } from "../components/EditProfileDialog";
 import { MyndChatPanel } from "../components/MyndChatPanel";
 import { TierCelebrationModal } from "../components/TierCelebrationModal";
 import { SavedPostsList } from "../components/SavedPostsList";
+import { ProfilePostsList } from "../components/ProfilePostsList";
+import { ProfileCommentsList } from "../components/ProfileCommentsList";
+import { ProfileSessionsList } from "../components/ProfileSessionsList";
 import { Progress } from "../components/ui/progress";
 import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings, Sparkles, Palette } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -286,13 +289,10 @@ const Profile = () => {
         ))}
       </div>
 
-      {tab === "Saved" ? (
-        <SavedPostsList />
-      ) : (
-        <div className="bg-card rounded-2xl shadow-card p-8 text-center">
-          <p className="text-muted-foreground text-sm">Your {tab.toLowerCase()} will appear here</p>
-        </div>
-      )}
+      {tab === "Posts" && <ProfilePostsList />}
+      {tab === "Comments" && <ProfileCommentsList />}
+      {tab === "Saved" && <SavedPostsList />}
+      {tab === "Sessions" && <ProfileSessionsList />}
 
       {/* Hidden dev button for tier upgrade demo */}
       <button
