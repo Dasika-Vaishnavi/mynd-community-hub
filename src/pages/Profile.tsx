@@ -4,6 +4,7 @@ import { MyndPetCustomizer } from "../components/MyndPetCustomizer";
 import { EditProfileDialog } from "../components/EditProfileDialog";
 import { MyndChatPanel } from "../components/MyndChatPanel";
 import { TierCelebrationModal } from "../components/TierCelebrationModal";
+import { SavedPostsList } from "../components/SavedPostsList";
 import { Progress } from "../components/ui/progress";
 import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings, Sparkles, Palette } from "lucide-react";
 import { useState, useEffect } from "react";
@@ -285,9 +286,13 @@ const Profile = () => {
         ))}
       </div>
 
-      <div className="bg-card rounded-2xl shadow-card p-8 text-center">
-        <p className="text-muted-foreground text-sm">Your {tab.toLowerCase()} will appear here</p>
-      </div>
+      {tab === "Saved" ? (
+        <SavedPostsList />
+      ) : (
+        <div className="bg-card rounded-2xl shadow-card p-8 text-center">
+          <p className="text-muted-foreground text-sm">Your {tab.toLowerCase()} will appear here</p>
+        </div>
+      )}
 
       {/* Hidden dev button for tier upgrade demo */}
       <button

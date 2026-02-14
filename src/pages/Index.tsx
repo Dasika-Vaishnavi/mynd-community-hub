@@ -7,6 +7,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 
 interface FeedPost {
+  id?: string;
   author: string;
   karma: number;
   timeAgo: string;
@@ -99,7 +100,7 @@ const toTimeAgo = (isoDate: string) => {
 const fetchPosts = async (): Promise<FeedPost[]> => {
   if (!supabase) return MOCK_POSTS;
 
-  const { data, error } = await supabase
+  const { data, error } = await (supabase as any)
     .from("posts")
     .select("*")
     .order("created_at", { ascending: false })
@@ -112,7 +113,8 @@ const fetchPosts = async (): Promise<FeedPost[]> => {
 
   if (!data || data.length === 0) return MOCK_POSTS;
 
-  return data.map((post) => ({
+  return data.map((post: any) => ({
+    id: post.id,
     author: post.author_name,
     karma: post.author_karma,
     timeAgo: toTimeAgo(post.created_at),
@@ -185,7 +187,7 @@ const Index = () => {
       <div className="space-y-4">
         {isLoading ? <p className="text-sm text-muted-foreground">Loading feed...</p> : null}
         {posts.map((post, i) => (
-          <PostCard key={i} {...post} />
+          <PostCard key={post.id || i} {...post} />
         ))}
       </div>
     </div>
