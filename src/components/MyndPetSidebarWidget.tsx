@@ -171,6 +171,7 @@ export const MyndPetSidebarWidget = ({
   const saveTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const greetingPlayedRef = useRef(false);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+  const initialLoadDoneRef = useRef(false);
 
   // ── Helper for raw DB calls (mynd_pets not in generated types) ──
   const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
@@ -207,24 +208,40 @@ export const MyndPetSidebarWidget = ({
           if (data.expression) setExpression(data.expression as ExpressionState);
         }
       } catch { /* no saved pet yet */ }
+      setTimeout(() => { initialLoadDoneRef.current = true; }, 100);
     };
     load();
   }, [user, getAuthHeaders, supabaseUrl]);
 
-  // ── Auto-save with debounce ─────────────────────────────────
-  const savePetConfig = useCallback(() => {
-    if (!user || !supabase) return;
+  // ── Auto-save with debounce (skip initial load) ─────────────
+  useEffect(() => {
+    if (!user || !supabase || !initialLoadDoneRef.current) return;
     if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
     saveTimeoutRef.current = setTimeout(async () => {
       const headers = await getAuthHeaders();
       if (!headers) return;
       try {
+        // PATCH existing row
+        const patchRes = await fetch(
+          `${supabaseUrl}/rest/v1/mynd_pets?user_id=eq.${user.id}`,
+          {
+            method: "PATCH",
+            headers: { ...headers, Prefer: "return=minimal" },
+            body: JSON.stringify({
+              base_color: petColor,
+              accessory,
+              expression,
+            }),
+          }
+        );
+        if (patchRes.ok) {
+          toast({ title: "✓ Mynd saved!", duration: 2000 });
+          return;
+        }
+        // Fallback: INSERT
         await fetch(`${supabaseUrl}/rest/v1/mynd_pets`, {
           method: "POST",
-          headers: {
-            ...headers,
-            Prefer: "resolution=merge-duplicates",
-          },
+          headers,
           body: JSON.stringify({
             user_id: user.id,
             base_color: petColor,
@@ -233,13 +250,10 @@ export const MyndPetSidebarWidget = ({
           }),
         });
         toast({ title: "✓ Mynd saved!", duration: 2000 });
-      } catch { /* silent fail */ }
+      } catch { /* silent */ }
     }, 1500);
-  }, [user, petColor, accessory, expression, getAuthHeaders, supabaseUrl]);
-
-  useEffect(() => {
-    if (user) savePetConfig();
-  }, [petColor, accessory]);
+    return () => { if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current); };
+  }, [user, petColor, accessory]);
 
   // ── Show speech bubble ──────────────────────────────────────
   const showBubble = useCallback(
