@@ -1,12 +1,15 @@
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { MyndPet, getKarmaTier, KARMA_TIERS } from "../components/MyndPet";
 import { MyndPetCustomizer } from "../components/MyndPetCustomizer";
 import { EditProfileDialog } from "../components/EditProfileDialog";
+import { MyndChatPanel } from "../components/MyndChatPanel";
+import { TierCelebrationModal } from "../components/TierCelebrationModal";
 import { Progress } from "../components/ui/progress";
 import { Calendar, Clock, Flame, Award, MessageCircle, Heart, BookOpen, Settings, Sparkles, Palette } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { toast } from "@/hooks/use-toast";
 
-const USER = {
+const USER_INITIAL = {
   name: "MindfulMango",
   bio: "Healing isn't linear 🌿 | ADHD brain navigating life one day at a time",
   pronouns: "they/them",
@@ -51,16 +54,66 @@ const Profile = () => {
   const [tab, setTab] = useState("Posts");
   const [customizerOpen, setCustomizerOpen] = useState(false);
   const [editProfileOpen, setEditProfileOpen] = useState(false);
-  const [userName, setUserName] = useState(USER.name);
-  const [userBio, setUserBio] = useState(USER.bio);
-  const [userPronouns, setUserPronouns] = useState(USER.pronouns);
-  const [petColor, setPetColor] = useState(USER.petColor);
-  const [petExpression, setPetExpression] = useState<"happy" | "calm" | "sleepy" | "excited">(USER.petExpression);
+  const [chatOpen, setChatOpen] = useState(false);
+  const [celebrationOpen, setCelebrationOpen] = useState(false);
+
+  const [userName, setUserName] = useState(USER_INITIAL.name);
+  const [userBio, setUserBio] = useState(USER_INITIAL.bio);
+  const [userPronouns, setUserPronouns] = useState(USER_INITIAL.pronouns);
+  const [userKarma, setUserKarma] = useState(USER_INITIAL.karma);
+  const [petColor, setPetColor] = useState(USER_INITIAL.petColor);
+  const [petExpression, setPetExpression] = useState<"happy" | "calm" | "sleepy" | "excited">(USER_INITIAL.petExpression);
   const [petAccessory, setPetAccessory] = useState<"none" | "crown" | "flower" | "halo" | "sparkle" | "headphones">("none");
-  const tier = getKarmaTier(USER.karma);
+  const [petIsThinking, setPetIsThinking] = useState(false);
+
+  const tier = getKarmaTier(userKarma);
+  const nextTier = KARMA_TIERS.find((t) => t.min > userKarma);
+  const progress = nextTier ? ((userKarma - tier.min) / (nextTier.min - tier.min)) * 100 : 100;
+  const karmaToNext = nextTier ? nextTier.min - userKarma : 0;
+
+  // Proactive toast on load if streak >= 7
+  useEffect(() => {
+    if (USER_INITIAL.streak >= 7) {
+      const timeout = setTimeout(() => {
+        toast({
+          title: "🌸 Mynd is proud of your consistency",
+          description: `${USER_INITIAL.streak}-day streak! Keep it up 💜`,
+          duration: 4000,
+        });
+      }, 1500);
+      return () => clearTimeout(timeout);
+    }
+  }, []);
+
+  // Simulate tier upgrade (hidden dev button)
+  const simulateTierUpgrade = () => {
+    const currentTierIndex = KARMA_TIERS.findIndex((t) => t.name === tier.name);
+    const next = KARMA_TIERS[currentTierIndex + 1];
+    if (next) {
+      setUserKarma(next.min + 10);
+      setTimeout(() => setCelebrationOpen(true), 300);
+    }
+  };
+
+  const handlePetStateChange = (state: { expression: "happy" | "calm" | "sleepy" | "excited"; isThinking: boolean }) => {
+    setPetExpression(state.expression);
+    setPetIsThinking(state.isThinking);
+  };
+
+  const userContext = {
+    name: userName,
+    karma: userKarma,
+    tier: tier.name,
+    streak: USER_INITIAL.streak,
+    sessions: USER_INITIAL.sessionsAttended,
+    badges: BADGES.map((b) => b.name),
+    progressToNextTier: Math.round(progress),
+    karmaToNextTier: karmaToNext,
+    nextTierName: nextTier?.name || "Max",
+  };
 
   return (
-    <div className="max-w-3xl mx-auto px-4 py-6 lg:py-8">
+    <div className="max-w-3xl mx-auto px-4 py-6 lg:py-8 pb-24">
       {/* Profile header */}
       <motion.div
         initial={{ opacity: 0, y: -8 }}
@@ -69,19 +122,26 @@ const Profile = () => {
       >
         <div className="absolute top-0 left-0 right-0 h-24 gradient-primary opacity-20" />
         <div className="relative z-10">
-          <MyndPet
-            size={110}
-            color={petColor}
-            expression={petExpression}
-            accessory={petAccessory}
-            glow
-            level={tier.level}
-            showKarma
-            karma={USER.karma}
-            className="mx-auto mb-3"
-          />
+          {/* Animated pet wrapper */}
+          <motion.div
+            animate={petIsThinking ? { scale: [1, 1.03, 1] } : { scale: 1 }}
+            transition={petIsThinking ? { duration: 1.5, repeat: Infinity, ease: "easeInOut" } : {}}
+          >
+            <MyndPet
+              size={110}
+              color={petColor}
+              expression={petExpression}
+              accessory={petAccessory}
+              glow
+              level={tier.level}
+              showKarma
+              karma={userKarma}
+              className="mx-auto mb-3"
+            />
+          </motion.div>
+
           <h1 className="font-display font-black text-2xl text-foreground mb-1">{userName}</h1>
-          <p className="text-muted-foreground text-sm mb-1">{userPronouns} · Joined {USER.joinDate}</p>
+          <p className="text-muted-foreground text-sm mb-1">{userPronouns} · Joined {USER_INITIAL.joinDate}</p>
           <p className="text-foreground/80 text-sm mb-3 max-w-md mx-auto">{userBio}</p>
 
           <div className="flex items-center justify-center gap-2 mb-3">
@@ -89,35 +149,30 @@ const Profile = () => {
               className="text-xs font-mono font-bold px-3 py-1 rounded-full inline-flex items-center gap-1"
               style={{ backgroundColor: `${tier.color}20`, color: tier.color }}
             >
-              {(tier as any).emoji} {tier.name} · {USER.karma.toLocaleString()} karma
+              {(tier as any).emoji} {tier.name} · {userKarma.toLocaleString()} karma
             </span>
             <span className="text-xs font-mono px-3 py-1 rounded-full bg-muted text-muted-foreground">
-              🐣 {USER.myndAge} old
+              🐣 {USER_INITIAL.myndAge} old
             </span>
           </div>
 
           {/* Tier progress */}
-          {(() => {
-            const nextTier = KARMA_TIERS.find((t) => t.min > USER.karma);
-            if (!nextTier) return (
-              <p className="text-xs text-muted-foreground mb-3 flex items-center justify-center gap-1">
-                <Sparkles size={12} /> Max tier reached!
-              </p>
-            );
-            const progress = ((USER.karma - tier.min) / (nextTier.min - tier.min)) * 100;
-            return (
-              <div className="max-w-xs mx-auto mb-3 space-y-1">
-                <div className="flex justify-between text-[10px] text-muted-foreground">
-                  <span>{tier.name}</span>
-                  <span>{nextTier.name}</span>
-                </div>
-                <Progress value={progress} className="h-2" />
-                <p className="text-[10px] text-muted-foreground text-center">
-                  {(nextTier.min - USER.karma).toLocaleString()} karma to next tier
-                </p>
+          {nextTier ? (
+            <div className="max-w-xs mx-auto mb-3 space-y-1">
+              <div className="flex justify-between text-[10px] text-muted-foreground">
+                <span>{tier.name}</span>
+                <span>{nextTier.name}</span>
               </div>
-            );
-          })()}
+              <Progress value={progress} className="h-2" />
+              <p className="text-[10px] text-muted-foreground text-center">
+                {karmaToNext.toLocaleString()} karma to next tier
+              </p>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground mb-3 flex items-center justify-center gap-1">
+              <Sparkles size={12} /> Max tier reached!
+            </p>
+          )}
 
           <div className="flex items-center justify-center gap-2">
             <button
@@ -141,10 +196,10 @@ const Profile = () => {
       {/* Stats grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-6">
         {[
-          { icon: Heart, label: "Karma", value: USER.karma.toLocaleString(), color: "text-accent" },
-          { icon: Flame, label: "Streak", value: `${USER.streak} days`, color: "text-warning" },
-          { icon: Calendar, label: "Sessions", value: USER.sessionsAttended.toString(), color: "text-primary" },
-          { icon: MessageCircle, label: "Posts", value: USER.posts.toString(), color: "text-secondary" },
+          { icon: Heart, label: "Karma", value: userKarma.toLocaleString(), color: "text-accent" },
+          { icon: Flame, label: "Streak", value: `${USER_INITIAL.streak} days`, color: "text-warning" },
+          { icon: Calendar, label: "Sessions", value: USER_INITIAL.sessionsAttended.toString(), color: "text-primary" },
+          { icon: MessageCircle, label: "Posts", value: USER_INITIAL.posts.toString(), color: "text-secondary" },
         ].map(({ icon: Icon, label, value, color }) => (
           <motion.div
             key={label}
@@ -234,11 +289,53 @@ const Profile = () => {
         <p className="text-muted-foreground text-sm">Your {tab.toLowerCase()} will appear here</p>
       </div>
 
+      {/* Hidden dev button for tier upgrade demo */}
+      <button
+        onClick={simulateTierUpgrade}
+        className="fixed bottom-4 left-4 z-40 opacity-0 hover:opacity-100 text-[8px] text-muted-foreground bg-muted px-2 py-1 rounded transition-opacity"
+      >
+        Simulate Tier Upgrade
+      </button>
+
+      {/* Floating "Talk to Mynd" button */}
+      <motion.button
+        onClick={() => setChatOpen(true)}
+        whileHover={{ scale: 1.05, boxShadow: "0 0 24px -4px hsl(252, 75%, 60%, 0.4)" }}
+        whileTap={{ scale: 0.95 }}
+        className="fixed bottom-6 right-6 z-40 px-5 py-3 rounded-full font-display font-bold text-sm text-primary-foreground shadow-elevated inline-flex items-center gap-2"
+        style={{ background: "hsl(252, 75%, 60%)" }}
+      >
+        <MessageCircle size={18} />
+        💬 Talk to Mynd
+      </motion.button>
+
+      {/* Chat Panel */}
+      <MyndChatPanel
+        open={chatOpen}
+        onClose={() => setChatOpen(false)}
+        userContext={userContext}
+        petColor={petColor}
+        petExpression={petExpression}
+        tierLevel={tier.level}
+        onPetStateChange={handlePetStateChange}
+      />
+
+      {/* Tier Celebration Modal */}
+      <TierCelebrationModal
+        open={celebrationOpen}
+        onClose={() => setCelebrationOpen(false)}
+        tierName={tier.name}
+        tierEmoji={(tier as any).emoji}
+        tierColor={tier.color}
+        tierLevel={tier.level}
+        petColor={petColor}
+      />
+
       {/* Mynd Pet Customizer */}
       <MyndPetCustomizer
         open={customizerOpen}
         onClose={() => setCustomizerOpen(false)}
-        karma={USER.karma}
+        karma={userKarma}
         initialColor={petColor}
         initialExpression={petExpression}
         initialAccessory={petAccessory}
