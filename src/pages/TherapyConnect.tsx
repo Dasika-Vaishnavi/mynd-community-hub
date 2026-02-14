@@ -2,6 +2,8 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { AITherapistCard } from "../components/AITherapistCard";
 import { VirtualAssistant } from "../components/VirtualAssistant";
+import { TherapistProfileDialog } from "../components/TherapistProfileDialog";
+import { BookSessionDialog } from "../components/BookSessionDialog";
 import { VIRTUAL_ASSISTANTS, type AssistantConfig } from "@/config/assistants";
 import { Star, Calendar, MapPin, Clock, Filter } from "lucide-react";
 import { MyndPet } from "../components/MyndPet";
@@ -73,6 +75,9 @@ const REAL_THERAPISTS = [
 
 const TherapyConnect = () => {
   const [activeAssistant, setActiveAssistant] = useState<{ config: AssistantConfig; mode: 'text' | 'voice' } | null>(null);
+
+  const [profileTherapist, setProfileTherapist] = useState<typeof REAL_THERAPISTS[0] | null>(null);
+  const [bookingTherapist, setBookingTherapist] = useState<typeof REAL_THERAPISTS[0] | null>(null);
 
   const openAssistant = (assistantId: string, mode: 'text' | 'voice') => {
     const config = VIRTUAL_ASSISTANTS.find(a => a.assistantId === assistantId);
@@ -164,10 +169,16 @@ const TherapyConnect = () => {
                   </span>
                 </div>
                 <div className="flex gap-2">
-                  <button className="text-xs px-4 py-1.5 rounded-xl bg-muted text-foreground font-display font-semibold hover:bg-muted/80 transition-colors">
+                  <button
+                    onClick={() => setProfileTherapist(t)}
+                    className="text-xs px-4 py-1.5 rounded-xl bg-muted text-foreground font-display font-semibold hover:bg-muted/80 transition-colors"
+                  >
                     View Profile
                   </button>
-                  <button className="text-xs px-4 py-1.5 rounded-xl gradient-primary text-primary-foreground font-display font-semibold hover:opacity-90 transition-opacity">
+                  <button
+                    onClick={() => setBookingTherapist(t)}
+                    className="text-xs px-4 py-1.5 rounded-xl gradient-primary text-primary-foreground font-display font-semibold hover:opacity-90 transition-opacity"
+                  >
                     Book Session
                   </button>
                 </div>
@@ -185,6 +196,25 @@ const TherapyConnect = () => {
           initialMode={activeAssistant.mode}
         />
       )}
+
+      {/* Therapist Profile Dialog */}
+      <TherapistProfileDialog
+        therapist={profileTherapist}
+        open={!!profileTherapist}
+        onClose={() => setProfileTherapist(null)}
+        onBookSession={() => {
+          const t = profileTherapist;
+          setProfileTherapist(null);
+          setBookingTherapist(t);
+        }}
+      />
+
+      {/* Book Session Dialog */}
+      <BookSessionDialog
+        therapist={bookingTherapist}
+        open={!!bookingTherapist}
+        onClose={() => setBookingTherapist(null)}
+      />
     </div>
   );
 };
