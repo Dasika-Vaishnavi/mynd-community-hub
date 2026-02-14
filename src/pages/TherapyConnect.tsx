@@ -1,5 +1,8 @@
+import { useState } from "react";
 import { motion } from "framer-motion";
 import { AITherapistCard } from "../components/AITherapistCard";
+import { VirtualAssistant } from "../components/VirtualAssistant";
+import { VIRTUAL_ASSISTANTS, type AssistantConfig } from "@/config/assistants";
 import { Star, Calendar, MapPin, Clock, Filter } from "lucide-react";
 import { MyndPet } from "../components/MyndPet";
 
@@ -9,24 +12,27 @@ const AI_THERAPISTS = [
     specialty: "Anxiety & Daily Stress",
     bio: "Warm and empathetic. I help you untangle daily anxiety with compassion and practical tools.",
     tags: ["Anxiety", "Stress", "Mindfulness"],
-    imageSrc: "https://images.unsplash.com/photo-1594824476967-48c8b964c7a8?w=200&h=200&fit=crop&crop=face",
-    gradient: "linear-gradient(135deg, hsl(252, 75%, 60%), hsl(270, 95%, 75%))",
+    imageSrc: VIRTUAL_ASSISTANTS[0].avatarImageUrl,
+    gradient: "linear-gradient(135deg, hsl(329, 86%, 70%), hsl(270, 95%, 75%))",
+    assistantId: 'dr-ava',
   },
   {
     name: "Dr. Marcus",
     specialty: "CBT & Structured Thinking",
     bio: "Calm and analytical. Together we'll build frameworks to reframe unhelpful thought patterns.",
     tags: ["CBT", "Depression", "Logic"],
-    imageSrc: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=200&h=200&fit=crop&crop=face",
+    imageSrc: VIRTUAL_ASSISTANTS[1].avatarImageUrl,
     gradient: "linear-gradient(135deg, hsl(220, 60%, 50%), hsl(252, 75%, 60%))",
+    assistantId: 'dr-marcus',
   },
   {
     name: "Dr. Luna",
     specialty: "Grief, Identity & ADHD",
     bio: "Gentle and creative. I hold space for the messy, beautiful parts of being human.",
     tags: ["Grief", "ADHD", "Identity"],
-    imageSrc: "https://images.unsplash.com/photo-1580489944761-15a19d654956?w=200&h=200&fit=crop&crop=face",
-    gradient: "linear-gradient(135deg, hsl(329, 86%, 70%), hsl(270, 95%, 75%))",
+    imageSrc: VIRTUAL_ASSISTANTS[2].avatarImageUrl,
+    gradient: "linear-gradient(135deg, hsl(270, 60%, 65%), hsl(252, 75%, 60%))",
+    assistantId: 'dr-luna',
   },
 ];
 
@@ -66,6 +72,13 @@ const REAL_THERAPISTS = [
 ];
 
 const TherapyConnect = () => {
+  const [activeAssistant, setActiveAssistant] = useState<{ config: AssistantConfig; mode: 'text' | 'voice' } | null>(null);
+
+  const openAssistant = (assistantId: string, mode: 'text' | 'voice') => {
+    const config = VIRTUAL_ASSISTANTS.find(a => a.assistantId === assistantId);
+    if (config) setActiveAssistant({ config, mode });
+  };
+
   return (
     <div className="max-w-5xl mx-auto px-4 py-6 lg:py-8">
       {/* Header */}
@@ -91,7 +104,12 @@ const TherapyConnect = () => {
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
           {AI_THERAPISTS.map((t) => (
-            <AITherapistCard key={t.name} {...t} />
+            <AITherapistCard
+              key={t.name}
+              {...t}
+              onChat={() => openAssistant(t.assistantId, 'text')}
+              onVoice={() => openAssistant(t.assistantId, 'voice')}
+            />
           ))}
         </div>
       </section>
@@ -158,6 +176,15 @@ const TherapyConnect = () => {
           ))}
         </div>
       </section>
+
+      {/* Virtual Assistant Overlay */}
+      {activeAssistant && (
+        <VirtualAssistant
+          assistant={activeAssistant.config}
+          onClose={() => setActiveAssistant(null)}
+          initialMode={activeAssistant.mode}
+        />
+      )}
     </div>
   );
 };

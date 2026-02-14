@@ -8,6 +8,8 @@ interface AITherapistCardProps {
   tags: string[];
   imageSrc: string;
   gradient: string;
+  onChat?: () => void;
+  onVoice?: () => void;
 }
 
 export const AITherapistCard = ({
@@ -17,6 +19,8 @@ export const AITherapistCard = ({
   tags,
   imageSrc,
   gradient,
+  onChat,
+  onVoice,
 }: AITherapistCardProps) => {
   return (
     <motion.div
@@ -50,11 +54,17 @@ export const AITherapistCard = ({
         </div>
 
         <div className="flex gap-2">
-          <button className="flex-1 flex items-center justify-center gap-2 gradient-primary text-primary-foreground rounded-xl py-2.5 font-display font-bold text-sm hover:opacity-90 transition-opacity">
+          <button
+            onClick={onChat}
+            className="flex-1 flex items-center justify-center gap-2 gradient-primary text-primary-foreground rounded-xl py-2.5 font-display font-bold text-sm hover:opacity-90 transition-opacity"
+          >
             <MessageCircle size={16} />
             Chat
           </button>
-          <button className="flex-1 flex items-center justify-center gap-2 bg-muted text-foreground rounded-xl py-2.5 font-display font-bold text-sm hover:bg-muted/80 transition-colors">
+          <button
+            onClick={onVoice}
+            className="flex-1 flex items-center justify-center gap-2 bg-muted text-foreground rounded-xl py-2.5 font-display font-bold text-sm hover:bg-muted/80 transition-colors"
+          >
             <Mic size={16} />
             Voice
           </button>
