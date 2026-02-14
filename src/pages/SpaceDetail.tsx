@@ -251,9 +251,32 @@ const SpaceDetail = () => {
   const [activeChannel, setActiveChannel] = useState(spaceData.channels.find((c) => c.type === "text")?.id || spaceData.channels[0]?.id || "general");
   const [messageInput, setMessageInput] = useState("");
   const [showMembers, setShowMembers] = useState(true);
+  const [localMessages, setLocalMessages] = useState<Record<string, SpaceMessage[]>>({});
 
   const activeChannelData = spaceData.channels.find((c) => c.id === activeChannel);
-  const channelMessages = spaceData.messages[activeChannel] || [];
+  const channelMessages = [
+    ...(spaceData.messages[activeChannel] || []),
+    ...(localMessages[activeChannel] || []),
+  ];
+
+  const handleSendMessage = () => {
+    if (!messageInput.trim()) return;
+    const newMsg: SpaceMessage = {
+      id: `local-${Date.now()}`,
+      author: "You",
+      karma: 100,
+      petColor: "hsl(252, 75%, 60%)",
+      petExpression: "happy",
+      content: messageInput.trim(),
+      time: new Date().toLocaleTimeString([], { hour: "numeric", minute: "2-digit" }),
+      reactions: [],
+    };
+    setLocalMessages((prev) => ({
+      ...prev,
+      [activeChannel]: [...(prev[activeChannel] || []), newMsg],
+    }));
+    setMessageInput("");
+  };
 
   // Group channels by category
   const categories = spaceData.channels.reduce<Record<string, Channel[]>>((acc, ch) => {
@@ -468,10 +491,12 @@ const SpaceDetail = () => {
                     type="text"
                     value={messageInput}
                     onChange={(e) => setMessageInput(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                     placeholder={`Message #${activeChannelData?.name || "general"}`}
                     className="flex-1 bg-transparent text-sm font-body text-foreground placeholder:text-muted-foreground focus:outline-none"
                   />
                   <button
+                    onClick={handleSendMessage}
                     className={`p-1.5 rounded-lg transition-colors ${
                       messageInput.trim()
                         ? "text-primary hover:bg-primary/10"
