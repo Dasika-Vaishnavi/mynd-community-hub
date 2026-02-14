@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      mynd_pets: {
+        Row: {
+          accessory: string
+          base_color: string
+          blush_color: string
+          created_at: string
+          expression: string
+          eye_color: string
+          id: string
+          last_chat_expression: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          accessory?: string
+          base_color?: string
+          blush_color?: string
+          created_at?: string
+          expression?: string
+          eye_color?: string
+          id?: string
+          last_chat_expression?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          accessory?: string
+          base_color?: string
+          blush_color?: string
+          created_at?: string
+          expression?: string
+          eye_color?: string
+          id?: string
+          last_chat_expression?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       posts: {
         Row: {
           author_id: string | null

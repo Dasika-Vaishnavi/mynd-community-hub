@@ -2,3 +2,9 @@ project_id = "jobzvdlddwlhvqxlmrja"
 
 [functions.mynd-chat]
 verify_jwt = false
+
+[functions.assistant-speak]
+verify_jwt = false
+
+[functions.assistant-chat]
+verify_jwt = false
