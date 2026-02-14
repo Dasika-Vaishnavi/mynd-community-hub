@@ -12,6 +12,7 @@ import Community from "./pages/Community";
 import SpaceDetail from "./pages/SpaceDetail";
 import NotFound from "./pages/NotFound";
 import Auth from "./pages/Auth";
+import MyndPetDemo from "./pages/MyndPetDemo";
 
 const queryClient = new QueryClient();
 
@@ -30,6 +31,7 @@ const App = () => (
               <Route path="/profile" element={<Profile />} />
               <Route path="/community" element={<Community />} />
               <Route path="/space/:spaceName" element={<SpaceDetail />} />
+              <Route path="/mynd-pet-demo" element={<MyndPetDemo />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </Layout>
