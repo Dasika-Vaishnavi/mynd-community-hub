@@ -82,13 +82,14 @@ export const Layout = ({ children }: { children: ReactNode }) => {
           </h3>
           <div className="space-y-2">
             {TRENDING_SPACES.map((s) => (
-              <button
+              <Link
                 key={s.name}
+                to={`/community?space=${encodeURIComponent(s.name)}`}
                 className="w-full text-left flex items-center justify-between px-2 py-1.5 rounded-lg hover:bg-muted transition-colors"
               >
                 <span className="text-sm font-medium text-foreground">m/{s.name}</span>
                 <span className="text-xs text-muted-foreground">{s.members}</span>
-              </button>
+              </Link>
             ))}
           </div>
         </div>
