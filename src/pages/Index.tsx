@@ -111,9 +111,7 @@ const fetchPosts = async (): Promise<FeedPost[]> => {
     return MOCK_POSTS;
   }
 
-  if (!data || data.length === 0) return MOCK_POSTS;
-
-  return data.map((post: any) => ({
+  const dbPosts: FeedPost[] = (data || []).map((post: any) => ({
     id: post.id,
     author: post.author_name,
     karma: post.author_karma,
@@ -127,6 +125,9 @@ const fetchPosts = async (): Promise<FeedPost[]> => {
     petColor: post.pet_color ?? "hsl(252, 75%, 60%)",
     petExpression: post.pet_expression ?? "happy",
   }));
+
+  // Merge DB posts on top of mock posts
+  return [...dbPosts, ...MOCK_POSTS];
 };
 
 const SORT_OPTIONS = [
