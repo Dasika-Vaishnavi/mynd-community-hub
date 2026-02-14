@@ -1,7 +1,8 @@
 import { motion } from "framer-motion";
 import { Users, TrendingUp, Plus, Search, Hash } from "lucide-react";
 import { MyndPet } from "../components/MyndPet";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { useSearchParams } from "react-router-dom";
 
 const SPACES = [
   { name: "UnwindYourMynd", description: "A general safe space for mental health discussions", members: "12.4k", icon: "🧘", color: "hsl(252, 75%, 60%)" },
@@ -15,7 +16,13 @@ const SPACES = [
 ];
 
 const Community = () => {
-  const [search, setSearch] = useState("");
+  const [searchParams] = useSearchParams();
+  const [search, setSearch] = useState(searchParams.get("space") || "");
+
+  useEffect(() => {
+    const space = searchParams.get("space");
+    if (space) setSearch(space);
+  }, [searchParams]);
   const filtered = SPACES.filter(
     (s) =>
       s.name.toLowerCase().includes(search.toLowerCase()) ||
