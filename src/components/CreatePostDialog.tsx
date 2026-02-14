@@ -65,7 +65,7 @@ export const CreatePostDialog = ({ open, onOpenChange }: CreatePostDialogProps) 
     setIsSubmitting(true);
 
     try {
-      const { error } = await supabase.from("posts").insert({
+      const { error } = await (supabase as any).from("posts").insert({
         author_id: user.id,
         author_name: authorName,
         author_karma: 0,

@@ -2,6 +2,9 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, MessageCircle, Bookmark, Share2, MoreHorizontal, Pencil, Check, X } from "lucide-react";
 import { MyndPet, getKarmaTier } from "./MyndPet";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/contexts/AuthContext";
+import { useToast } from "@/hooks/use-toast";
 
 interface Comment {
   id: string;
@@ -14,6 +17,7 @@ interface Comment {
 }
 
 interface PostCardProps {
+  id?: string;
   author: string;
   karma: number;
   timeAgo: string;
@@ -26,7 +30,9 @@ interface PostCardProps {
   petColor?: string;
   petExpression?: "happy" | "calm" | "sleepy" | "excited";
   editable?: boolean;
+  initialSaved?: boolean;
   onEdit?: (title: string, preview: string) => void;
+  onSaveToggle?: (postId: string, saved: boolean) => void;
 }
 
 const flairColors: Record<string, string> = {
@@ -43,6 +49,7 @@ const MOCK_COMMENTS: Comment[] = [
 ];
 
 export const PostCard = ({
+  id,
   author,
   karma,
   timeAgo,
@@ -55,12 +62,16 @@ export const PostCard = ({
   petColor = "hsl(252, 75%, 60%)",
   petExpression = "happy",
   editable = true,
+  initialSaved = false,
   onEdit,
+  onSaveToggle,
 }: PostCardProps) => {
+  const { user } = useAuth();
+  const { toast } = useToast();
   const tier = getKarmaTier(karma);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(upvotes);
-  const [saved, setSaved] = useState(false);
+  const [saved, setSaved] = useState(initialSaved);
   const [showComments, setShowComments] = useState(false);
   const [commentList, setCommentList] = useState<Comment[]>(MOCK_COMMENTS);
   const [newComment, setNewComment] = useState("");
@@ -203,7 +214,24 @@ export const PostCard = ({
         </button>
         <motion.button
           whileTap={{ scale: 0.9 }}
-          onClick={() => setSaved(!saved)}
+          onClick={async () => {
+            if (!user || !supabase || !id) {
+              setSaved(!saved);
+              return;
+            }
+            const newSaved = !saved;
+            setSaved(newSaved);
+            try {
+              if (newSaved) {
+                await (supabase as any).from("saved_posts").insert({ user_id: user.id, post_id: id });
+              } else {
+                await (supabase as any).from("saved_posts").delete().eq("user_id", user.id).eq("post_id", id);
+              }
+              onSaveToggle?.(id, newSaved);
+            } catch {
+              setSaved(!newSaved);
+            }
+          }}
           className={`p-1.5 rounded-full ml-auto transition-colors ${
             saved
               ? "text-primary bg-primary/10"
